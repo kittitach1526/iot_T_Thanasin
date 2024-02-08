@@ -1,0 +1,91 @@
+#include <Arduino.h>
+#include "Wire.h"
+#include "LiquidCrystal_I2C.h"
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+int state;
+int swSP = D3;
+int swR = D4;
+int swP = D6;
+unsigned long start = 0;
+unsigned long count = 0;
+unsigned long sec = 0;
+unsigned long minu = 0;
+unsigned long milli = 0;
+String show;
+
+void setup()
+{
+  Serial.begin(115200);
+  lcd.init();
+  Wire.begin();
+  // pinMode(led, OUTPUT);
+  pinMode(swSP, INPUT);
+  pinMode(swR, INPUT);
+  pinMode(swP, INPUT);
+  lcd.backlight();
+  state = 0;
+}
+
+void loop()
+{
+  if (state == 0)
+  {
+    lcd.setCursor(2, 0);
+    lcd.print("Press button");
+    lcd.setCursor(4, 1);
+    lcd.print("to start");
+    if (digitalRead(swSP) == 0)
+    {
+      lcd.clear();
+      state = 1;
+      start = millis();
+      while (digitalRead(swSP) == 0)
+        ;
+    }
+  }
+  if (state == 1)
+  {
+    count = millis() - start;
+    minu = (count / 60000) % 60; // จะรีเป็น 0 ทุกครั้งที่เวลามันเกิน 60 จะได้สวยๆ
+    sec = (count / 1000) % 60; // เหมือนด้านบน
+    milli = count % 1000;  // เหมือนกันแต่รีที่ 1000 เพาะหน่วยเป็นเสี้ยววิ
+    show = String(minu) + ":" + String(sec) + ":" + milli;
+    lcd.setCursor(4, 0);
+    lcd.print(show);
+    Serial.println(1);
+    if (digitalRead(swSP) == 0)
+    {
+      state = 2;
+      while (digitalRead(swSP) == 0)
+        ;
+    }
+    if (digitalRead(swR) == 0)
+    {
+      lcd.clear();
+      state = 0;
+      show = 0;
+      while (digitalRead(swR) == 0)
+        ;
+    }
+  }
+  if (state == 2)
+  {
+    start = millis() - count;
+    Serial.println(2);
+    if (digitalRead(swSP) == 0)
+    {
+      state = 1;
+      while (digitalRead(swSP) == 0)
+        ;
+    }
+    if (digitalRead(swR) == 0)
+    {
+      lcd.clear();
+      state = 0;
+      show = 0;
+      while (digitalRead(swR) == 0)
+        ;
+    }
+  }
+}
